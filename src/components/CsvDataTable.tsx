@@ -386,7 +386,7 @@ export function CsvDataTable({ onFileUpload, fileInputRef }: CsvDataTableProps) 
       </div>
 
       {/* Table wrapper - matches Figma design */}
-      <div className="bg-white flex flex-col items-center overflow-hidden rounded-[12px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1),0px_2px_6px_2px_rgba(0,0,0,0.05)] flex-1 min-h-0 w-full">
+      <div className="bg-white flex flex-col items-center overflow-hidden rounded-[12px] flex-1 min-h-0 w-full border border-neutral-100">
         {/* Single horizontal scroll container for both header and body */}
         <div className={`${paginatedData && paginatedData.length > 0 ? 'overflow-x-auto' : 'overflow-hidden'} w-full custom-scrollbar flex flex-col flex-1 min-h-0`}>
           {/* Header - fixed, no vertical scroll */}
