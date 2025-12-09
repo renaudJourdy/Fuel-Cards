@@ -297,7 +297,7 @@ export function CsvDataTable({ onFileUpload, fileInputRef }: CsvDataTableProps) 
 
   // Populated state
   return (
-    <div className="flex flex-col gap-[8px] w-full flex-1 min-h-0 overflow-hidden">
+    <div className="flex flex-col gap-[8px] w-full flex-1 min-h-0 overflow-hidden min-w-0">
       {/* Hidden file input for re-upload */}
       <input
         ref={fileInputRef}
@@ -386,7 +386,7 @@ export function CsvDataTable({ onFileUpload, fileInputRef }: CsvDataTableProps) 
       </div>
 
       {/* Table wrapper - matches Figma design */}
-      <div className="bg-white flex flex-col items-center overflow-hidden rounded-[12px] flex-1 min-h-0 w-full border border-neutral-100">
+      <div className="bg-white flex flex-col items-center overflow-hidden rounded-[12px] flex-1 min-h-0 w-full border border-neutral-100 min-w-0">
         {/* Single horizontal scroll container for both header and body */}
         <div className={`${paginatedData && paginatedData.length > 0 ? 'overflow-x-auto' : 'overflow-hidden'} w-full custom-scrollbar flex flex-col flex-1 min-h-0`}>
           {/* Header - fixed, no vertical scroll */}

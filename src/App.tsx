@@ -25,7 +25,7 @@ export default function App() {
     <div className="h-screen overflow-hidden bg-background flex flex-col">
       {/* Header */}
       <div className="shrink-0">
-        <div className="max-w-[1400px] mx-auto px-[24px]">
+        <div className="max-w-[1400px] mx-auto w-full" style={{ paddingLeft: '16px', paddingRight: '16px' }}>
           <div className="content-stretch flex items-center justify-between overflow-clip py-[16px] px-0 w-full">
             <div className="content-stretch flex items-center shrink-0">
               <div className="content-stretch flex items-center shrink-0">
@@ -65,7 +65,7 @@ export default function App() {
       </div>
 
       {/* Main content */}
-      <div className="max-w-[1400px] mx-auto px-[24px] overflow-hidden flex flex-col min-h-0" style={{ height: 'calc(100vh - 80px)', paddingTop: '24px', paddingBottom: '24px', boxSizing: 'border-box' }}>
+      <div className="max-w-[1400px] mx-auto overflow-hidden flex flex-col min-h-0 w-full" style={{ height: 'calc(100vh - 80px)', paddingTop: '16px', paddingBottom: '16px', paddingLeft: '16px', paddingRight: '16px', boxSizing: 'border-box', minWidth: 0 }}>
         <CsvDataTable 
           onFileUpload={handleFileUpload}
           fileInputRef={fileInputRef}
