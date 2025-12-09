@@ -4,15 +4,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import svgPaths from "../imports/svg-9qh9cqqme2";
 import { Badge } from "./ui/badge";
 
-// Column definitions with French headers
+// Column definitions with French headers - Optimized order for UX
 const COLUMNS = [
   { key: 'date_time', label: 'Date et Heure', width: 'w-[180px]' },
-  { key: 'city_department', label: 'Ville', width: 'w-[200px]' },
   { key: 'license_plate', label: 'Immatriculation', width: 'w-[160px]' },
   { key: 'fuel_type', label: 'Type de Carburant', width: 'w-[180px]' },
+  { key: 'volume_liters', label: 'Volume (L)', width: 'w-[130px]' },
   { key: 'unit_price_euros', label: 'Prix Unitaire (€/L)', width: 'w-[170px]' },
   { key: 'prix_plein_euros', label: 'Prix Plein (€)', width: 'w-[150px]' },
-  { key: 'volume_liters', label: 'Volume (L)', width: 'w-[130px]' },
+  { key: 'city_department', label: 'Ville', width: 'w-[200px]' },
   { key: 'consumption_average', label: 'Consommation Moyenne (L/100km)', width: 'w-[240px]' },
   { key: 'consumption_real', label: 'Consommation Réelle (L/100km)', width: 'w-[240px]' },
 ];
