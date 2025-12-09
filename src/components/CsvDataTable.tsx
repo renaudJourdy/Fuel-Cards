@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Upload, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import svgPaths from "../imports/svg-9qh9cqqme2";
@@ -6,15 +6,15 @@ import { Badge } from "./ui/badge";
 
 // Column definitions with French headers - Optimized order for UX
 const COLUMNS = [
-  { key: 'date_time', label: 'Date et Heure', width: 'w-[180px]' },
-  { key: 'license_plate', label: 'Immatriculation', width: 'w-[160px]' },
-  { key: 'fuel_type', label: 'Type de Carburant', width: 'w-[180px]' },
-  { key: 'volume_liters', label: 'Volume (L)', width: 'w-[130px]' },
-  { key: 'unit_price_euros', label: 'Prix Unitaire (€/L)', width: 'w-[170px]' },
-  { key: 'prix_plein_euros', label: 'Prix Plein (€)', width: 'w-[150px]' },
-  { key: 'city_department', label: 'Ville', width: 'w-[200px]' },
-  { key: 'consumption_average', label: 'Consommation Moyenne (L/100km)', width: 'w-[240px]' },
+  { key: 'date_time', label: 'Date et Heure', width: 'w-[180px]', sticky: true, leftPosition: 0 },
+  { key: 'license_plate', label: 'Immatriculation', width: 'w-[160px]', sticky: true, leftPosition: 180, lastSticky: true },
+  { key: 'consumption_average', label: 'Consommation Moyenne (L/100km)', width: 'w-[260px]' },
   { key: 'consumption_real', label: 'Consommation Réelle (L/100km)', width: 'w-[240px]' },
+  { key: 'volume_liters', label: 'Volume (L)', width: 'w-[130px]' },
+  { key: 'prix_plein_euros', label: 'Tarif Plein (€)', width: 'w-[150px]' },
+  { key: 'unit_price_euros', label: 'Tarif Unitaire (€/L)', width: 'w-[170px]' },
+  { key: 'fuel_type', label: 'Type de Carburant', width: 'w-[180px]' },
+  { key: 'city_department', label: 'Ville', width: 'w-[200px]' },
 ];
 
 const ITEMS_PER_PAGE = 10;
@@ -233,8 +233,8 @@ export function CsvDataTable({ onFileUpload, fileInputRef }: CsvDataTableProps) 
   };
 
   // Generate page numbers to display
-  const getPageNumbers = () => {
-    const pages = [];
+  const getPageNumbers = (): (number | string)[] => {
+    const pages: (number | string)[] = [];
     if (totalPages <= 5) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
@@ -297,7 +297,7 @@ export function CsvDataTable({ onFileUpload, fileInputRef }: CsvDataTableProps) 
 
   // Populated state
   return (
-    <div className="flex flex-col gap-[8px] w-full">
+    <div className="flex flex-col gap-[8px] w-full flex-1 min-h-0 overflow-hidden">
       {/* Hidden file input for re-upload */}
       <input
         ref={fileInputRef}
@@ -308,20 +308,23 @@ export function CsvDataTable({ onFileUpload, fileInputRef }: CsvDataTableProps) 
       />
 
       {/* Table info */}
-      <div className="flex items-center justify-between w-full">
+      <div className="flex items-center justify-between w-full shrink-0">
         <div className="content-stretch flex gap-[10px] items-center">
-          <div
-            className="flex flex-col justify-center leading-[0] shrink-0 text-nowrap"
-            style={{
-              color: 'var(--text-primary, #030712)',
-              fontFamily: 'var(--font-family-sans-serif, "Readex Pro")',
-              fontSize: 'var(--font-size-1rem, 16px)',
-              fontWeight: 'var(--font-weight-Medium, 500)',
-              lineHeight: 'var(--line-height-15-rem, 24px)',
-              letterSpacing: 'var(--letter-spacing-15-em, 0.25px)',
-            }}
-          >
-            <p className="whitespace-pre">{filteredData?.length || 0} transaction{(filteredData?.length || 0) > 1 ? 's' : ''}</p>
+          <div className="flex flex-col justify-center shrink-0 text-nowrap">
+            <p
+              className="whitespace-pre"
+              style={{
+                color: 'var(--text-primary, #030712)',
+                fontFamily: 'var(--font-family-sans-serif, "Readex Pro")',
+                fontSize: 'var(--font-size-1rem, 16px)',
+                fontStyle: 'normal',
+                fontWeight: 'var(--font-weight-Medium, 500)',
+                lineHeight: 'var(--line-height-15-rem, 24px)',
+                letterSpacing: 'var(--letter-spacing-15-em, 0.25px)',
+              }}
+            >
+              {filteredData?.length || 0} transaction{(filteredData?.length || 0) > 1 ? 's' : ''}
+            </p>
           </div>
           <button
             onClick={() => setIsSearchOpen(!isSearchOpen)}
@@ -383,93 +386,133 @@ export function CsvDataTable({ onFileUpload, fileInputRef }: CsvDataTableProps) 
       </div>
 
       {/* Table wrapper - matches Figma design */}
-      <div className="bg-white content-stretch flex flex-col items-center overflow-clip rounded-[12px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1),0px_2px_6px_2px_rgba(0,0,0,0.05)] shrink-0 w-full">
-        {/* Table content - reduced height to fit pagination without scrolling */}
-        <div className={`${paginatedData && paginatedData.length > 0 ? 'overflow-x-auto' : 'overflow-hidden'} w-full custom-scrollbar max-h-[calc(48px+10*64px)]`}>
-          <table className="w-full border-collapse">
-            {/* Header */}
-            <thead className="sticky top-0 z-10">
-              <tr className="bg-neutral-100">
-                {COLUMNS.map((column) => (
-                  <th
-                    key={column.key}
-                    className={`${column.width} h-[48px] px-0 text-left relative bg-neutral-100`}
-                  >
-                    <div aria-hidden="true" className="absolute border-[#dbdee4] border-[0px_0px_1px] border-solid inset-0 pointer-events-none" />
-                    <button
-                      onClick={() => handleSort(column.key)}
-                      className="content-stretch flex items-center px-[16px] py-0 size-full hover:bg-muted/30 transition-colors"
+      <div className="bg-white flex flex-col items-center overflow-hidden rounded-[12px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1),0px_2px_6px_2px_rgba(0,0,0,0.05)] flex-1 min-h-0 w-full">
+        {/* Single horizontal scroll container for both header and body */}
+        <div className={`${paginatedData && paginatedData.length > 0 ? 'overflow-x-auto' : 'overflow-hidden'} w-full custom-scrollbar flex flex-col flex-1 min-h-0`}>
+          {/* Header - fixed, no vertical scroll */}
+          <div className="w-full shrink-0">
+            <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
+              {/* Header */}
+              <thead>
+                <tr className="bg-neutral-100">
+                  {COLUMNS.map((column) => (
+                    <th
+                      key={column.key}
+                      style={column.sticky ? {
+                        position: 'sticky',
+                        left: `${column.leftPosition}px`,
+                        zIndex: 20,
+                        backgroundColor: 'var(--color-neutral-100)',
+                        boxShadow: column.lastSticky ? '2px 0 4px rgba(0,0,0,0.06)' : 'none',
+                        width: column.width === 'w-[180px]' ? '180px' : column.width === 'w-[160px]' ? '160px' : undefined,
+                        minWidth: column.width === 'w-[180px]' ? '180px' : column.width === 'w-[160px]' ? '160px' : undefined
+                      } : {
+                        zIndex: 1,
+                        width: column.width === 'w-[180px]' ? '180px' : column.width === 'w-[160px]' ? '160px' : column.width === 'w-[200px]' ? '200px' : column.width === 'w-[170px]' ? '170px' : column.width === 'w-[150px]' ? '150px' : column.width === 'w-[130px]' ? '130px' : column.width === 'w-[240px]' ? '240px' : column.width === 'w-[260px]' ? '260px' : undefined,
+                        minWidth: column.width === 'w-[180px]' ? '180px' : column.width === 'w-[160px]' ? '160px' : column.width === 'w-[200px]' ? '200px' : column.width === 'w-[170px]' ? '170px' : column.width === 'w-[150px]' ? '150px' : column.width === 'w-[130px]' ? '130px' : column.width === 'w-[240px]' ? '240px' : column.width === 'w-[260px]' ? '260px' : undefined
+                      }}
+                      className={`${column.width} h-[48px] px-0 text-left relative bg-neutral-100 ${column.sticky ? 'sticky' : ''
+                        } ${column.lastSticky ? 'shadow-[2px_0_4px_rgba(0,0,0,0.06)]' : ''}`}
                     >
-                      <div className="flex flex-col items-start justify-center overflow-clip flex-1 mr-[8px]">
-                        <span className="text-muted-foreground overflow-ellipsis overflow-hidden whitespace-nowrap w-full text-left">
-                          {column.label}
-                        </span>
-                      </div>
-                      <div className="shrink-0 w-[16px] h-[16px] flex items-center justify-center">
-                        {sortConfig.key === column.key && (
-                          <>
-                            {sortConfig.direction === 'asc' ? (
-                              <ChevronUp className="size-[16px] text-muted-foreground" />
-                            ) : (
-                              <ChevronDown className="size-[16px] text-muted-foreground" />
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </button>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-
-            {/* Body */}
-            <tbody>
-              {paginatedData && paginatedData.length > 0 && (
-                paginatedData.map((row, index) => (
-                  <tr
-                    key={startIndex + index}
-                    className="bg-white"
-                    onMouseEnter={() => setHoveredRow(index)}
-                    onMouseLeave={() => setHoveredRow(null)}
-                  >
-                    {COLUMNS.map((column) => (
-                      <td
-                        key={column.key}
-                        className={`${column.width} h-[64px] px-0 relative ${hoveredRow === index ? 'bg-muted' : 'bg-white'}`}
+                      <div aria-hidden="true" className="absolute border-[#dbdee4] border-[0px_0px_1px] border-solid inset-0 pointer-events-none" />
+                      <button
+                        onClick={() => handleSort(column.key)}
+                        style={{ width: '100%', minWidth: 0 }}
+                        className="content-stretch flex items-center px-[16px] py-0 size-full hover:bg-muted/30 transition-colors overflow-hidden"
                       >
-                        <div aria-hidden="true" className="absolute border-[#dbdee4] border-[0px_0px_1px] border-solid inset-0 pointer-events-none" />
-                        <div className={`content-stretch flex items-center px-[16px] py-0 size-full transition-colors ${hoveredRow === index ? 'bg-muted' : 'bg-white'
-                          }`}>
-                          {(() => {
-                            const formatted = formatValue(column.key, row[column.key], row);
-                            if (typeof formatted === 'object' && formatted.type === 'consumption_real') {
+                        <div className="flex flex-col items-start justify-center flex-1 min-w-0 mr-[8px]">
+                          <span className="text-muted-foreground whitespace-nowrap w-full text-left block">
+                            {column.label}
+                          </span>
+                        </div>
+                        <div className="shrink-0 w-[16px] h-[16px] flex items-center justify-center">
+                          {sortConfig.key === column.key && (
+                            <>
+                              {sortConfig.direction === 'asc' ? (
+                                <ChevronUp className="size-[16px] text-muted-foreground" />
+                              ) : (
+                                <ChevronDown className="size-[16px] text-muted-foreground" />
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </button>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+            </table>
+          </div>
+
+          {/* Body - scrollable vertically only, horizontal scroll handled by parent */}
+          <div
+            className={`${paginatedData && paginatedData.length > 0 ? 'overflow-y-auto' : 'overflow-hidden'} w-full custom-scrollbar flex-1 min-h-0`}
+          >
+            <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
+              {/* Body */}
+              <tbody>
+                {paginatedData && paginatedData.length > 0 && (
+                  paginatedData.map((row, index) => (
+                    <tr
+                      key={startIndex + index}
+                      className="bg-white"
+                      onMouseEnter={() => setHoveredRow(index)}
+                      onMouseLeave={() => setHoveredRow(null)}
+                    >
+                      {COLUMNS.map((column) => (
+                        <td
+                          key={column.key}
+                          style={column.sticky ? {
+                            position: 'sticky',
+                            left: `${column.leftPosition}px`,
+                            zIndex: 20,
+                            backgroundColor: hoveredRow === index ? 'var(--muted)' : '#ffffff',
+                            boxShadow: column.lastSticky ? '2px 0 4px rgba(0,0,0,0.06)' : 'none',
+                            width: column.width === 'w-[180px]' ? '180px' : column.width === 'w-[160px]' ? '160px' : undefined,
+                            minWidth: column.width === 'w-[180px]' ? '180px' : column.width === 'w-[160px]' ? '160px' : undefined
+                          } : {
+                            zIndex: 1,
+                            width: column.width === 'w-[180px]' ? '180px' : column.width === 'w-[160px]' ? '160px' : column.width === 'w-[200px]' ? '200px' : column.width === 'w-[170px]' ? '170px' : column.width === 'w-[150px]' ? '150px' : column.width === 'w-[130px]' ? '130px' : column.width === 'w-[240px]' ? '240px' : column.width === 'w-[260px]' ? '260px' : undefined,
+                            minWidth: column.width === 'w-[180px]' ? '180px' : column.width === 'w-[160px]' ? '160px' : column.width === 'w-[200px]' ? '200px' : column.width === 'w-[170px]' ? '170px' : column.width === 'w-[150px]' ? '150px' : column.width === 'w-[130px]' ? '130px' : column.width === 'w-[240px]' ? '240px' : column.width === 'w-[260px]' ? '260px' : undefined
+                          }}
+                          className={`${column.width} h-[64px] px-0 relative ${column.sticky ? 'sticky' : ''
+                            } ${hoveredRow === index ? 'bg-muted' : column.sticky ? 'bg-white' : 'bg-white'} ${column.lastSticky ? 'shadow-[2px_0_4px_rgba(0,0,0,0.06)]' : ''
+                            }`}
+                        >
+                          <div aria-hidden="true" className="absolute border-[#dbdee4] border-[0px_0px_1px] border-solid inset-0 pointer-events-none" />
+                          <div className={`content-stretch flex items-center px-[16px] py-0 size-full transition-colors ${hoveredRow === index ? 'bg-muted' : 'bg-white'
+                            }`}>
+                            {(() => {
+                              const formatted = formatValue(column.key, row[column.key], row);
+                              if (typeof formatted === 'object' && formatted.type === 'consumption_real') {
+                                return (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <span className="text-foreground whitespace-nowrap">
+                                      {formatted.value}
+                                    </span>
+                                    <span style={formatted.badgeStyle}>
+                                      {formatted.percent}%
+                                    </span>
+                                  </div>
+                                );
+                              }
                               return (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                  <span className="text-foreground whitespace-nowrap">
-                                    {formatted.value}
-                                  </span>
-                                  <span style={formatted.badgeStyle}>
-                                    {formatted.percent}%
+                                <div className="content-stretch flex flex-col items-start justify-center">
+                                  <span className="text-foreground w-full">
+                                    {formatted}
                                   </span>
                                 </div>
                               );
-                            }
-                            return (
-                              <div className="content-stretch flex flex-col items-start justify-center overflow-clip">
-                                <span className="text-foreground overflow-ellipsis overflow-hidden whitespace-nowrap w-full">
-                                  {formatted}
-                                </span>
-                              </div>
-                            );
-                          })()}
-                        </div>
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                            })()}
+                          </div>
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Empty state - centered on viewport */}
@@ -493,7 +536,7 @@ export function CsvDataTable({ onFileUpload, fileInputRef }: CsvDataTableProps) 
 
         {/* Pagination - matches Figma design */}
         {totalPages > 1 && (
-          <div className="bg-white rounded-bl-[12px] rounded-br-[12px] shrink-0 w-full relative">
+          <div className="bg-white rounded-bl-[12px] rounded-br-[12px] shrink-0 w-full relative" style={{ paddingTop: '24px' }}>
             {/* Separator line using design system variable */}
             <div className="absolute left-0 right-0 top-0 h-px">
               <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 1094 1">

@@ -1,3 +1,4 @@
+import React from "react";
 import svgPaths from "./svg-0xt1crfpjr";
 
 function IconActionAddchart() {
