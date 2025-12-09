@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Upload, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import svgPaths from "../imports/svg-9qh9cqqme2";
+import { Badge } from "./ui/badge";
 
 // Column definitions with French headers
 const COLUMNS = [
-  { key: 'date_time', label: 'Date et Heure', width: 'w-[180px]', sticky: true, leftPosition: 0 },
-  { key: 'city_department', label: 'Ville', width: 'w-[200px]', sticky: true, leftPosition: 181 },
-  { key: 'license_plate', label: 'Immatriculation', width: 'w-[160px]', sticky: true, leftPosition: 382, lastSticky: true },
+  { key: 'date_time', label: 'Date et Heure', width: 'w-[180px]' },
+  { key: 'city_department', label: 'Ville', width: 'w-[200px]' },
+  { key: 'license_plate', label: 'Immatriculation', width: 'w-[160px]' },
   { key: 'fuel_type', label: 'Type de Carburant', width: 'w-[180px]' },
   { key: 'unit_price_euros', label: 'Prix Unitaire (€/L)', width: 'w-[170px]' },
   { key: 'prix_plein_euros', label: 'Prix Plein (€)', width: 'w-[150px]' },
@@ -97,7 +98,7 @@ export function CsvDataTable({ onFileUpload, fileInputRef }: CsvDataTableProps) 
 
     if (value === null || value === undefined || value === '') return '-';
 
-    // Format consumption_real with percentage difference
+    // Format consumption_real with percentage difference as colored badge
     if (key === 'consumption_real' && row && row.consumption_average) {
       const real = parseFloat(value);
       const average = parseFloat(row.consumption_average);
@@ -113,7 +114,53 @@ export function CsvDataTable({ onFileUpload, fileInputRef }: CsvDataTableProps) 
           maximumFractionDigits: 1,
           signDisplay: 'always',
         }).format(percentDiff);
-        return `${formattedReal} (${formattedPercent}%)`;
+
+        // Determine badge style based on percentage
+        const baseBadgeStyle = {
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: '9999px',
+          paddingLeft: '10px',
+          paddingRight: '10px',
+          paddingTop: '4px',
+          paddingBottom: '4px',
+          fontSize: '14px',
+          fontWeight: 400,
+          fontFamily: 'inherit',
+          whiteSpace: 'nowrap' as const
+        };
+
+        let badgeStyle = {};
+        if (percentDiff <= 0) {
+          // Success - green with light background
+          badgeStyle = {
+            ...baseBadgeStyle,
+            backgroundColor: '#DCFCE7',
+            color: '#14532D'
+          };
+        } else if (percentDiff > 0 && percentDiff < 10) {
+          // Warning - yellow with light background
+          badgeStyle = {
+            ...baseBadgeStyle,
+            backgroundColor: '#FEF9C3',
+            color: '#713F12'
+          };
+        } else {
+          // Destructive - red with light background
+          badgeStyle = {
+            ...baseBadgeStyle,
+            backgroundColor: '#FEE2E2',
+            color: '#7F1D1D'
+          };
+        }
+
+        return {
+          type: 'consumption_real',
+          value: formattedReal,
+          percent: formattedPercent,
+          badgeStyle
+        };
       }
 
       return new Intl.NumberFormat('fr-FR', {
@@ -346,10 +393,7 @@ export function CsvDataTable({ onFileUpload, fileInputRef }: CsvDataTableProps) 
                 {COLUMNS.map((column) => (
                   <th
                     key={column.key}
-                    style={column.sticky ? { left: `${column.leftPosition}px` } : {}}
-                    className={`${column.width} h-[48px] text-left relative ${column.sticky ? 'sticky bg-neutral-100 z-20' : ''
-                      } ${column.lastSticky ? 'shadow-[2px_0_4px_rgba(0,0,0,0.06)] px-0' : ''} ${column.sticky && !column.lastSticky ? 'pl-0 pr-[1px]' : column.sticky ? '' : 'px-0'
-                      }`}
+                    className={`${column.width} h-[48px] px-0 text-left relative bg-neutral-100`}
                   >
                     <div aria-hidden="true" className="absolute border-[#dbdee4] border-[0px_0px_1px] border-solid inset-0 pointer-events-none" />
                     <button
@@ -391,19 +435,33 @@ export function CsvDataTable({ onFileUpload, fileInputRef }: CsvDataTableProps) 
                     {COLUMNS.map((column) => (
                       <td
                         key={column.key}
-                        style={column.sticky ? { left: `${column.leftPosition}px` } : {}}
-                        className={`${column.width} h-[64px] relative ${column.sticky ? `sticky z-20 ${hoveredRow === index ? 'bg-muted' : 'bg-white'}` : ''
-                          } ${column.lastSticky ? 'shadow-[2px_0_4px_rgba(0,0,0,0.06)] px-0' : ''} ${column.sticky && !column.lastSticky ? 'pl-0 pr-[1px]' : column.sticky ? '' : 'px-0'
-                          }`}
+                        className={`${column.width} h-[64px] px-0 relative ${hoveredRow === index ? 'bg-muted' : 'bg-white'}`}
                       >
                         <div aria-hidden="true" className="absolute border-[#dbdee4] border-[0px_0px_1px] border-solid inset-0 pointer-events-none" />
                         <div className={`content-stretch flex items-center px-[16px] py-0 size-full transition-colors ${hoveredRow === index ? 'bg-muted' : 'bg-white'
                           }`}>
-                          <div className="content-stretch flex flex-col items-start justify-center overflow-clip">
-                            <span className="text-foreground overflow-ellipsis overflow-hidden whitespace-nowrap w-full">
-                              {formatValue(column.key, row[column.key], row)}
-                            </span>
-                          </div>
+                          {(() => {
+                            const formatted = formatValue(column.key, row[column.key], row);
+                            if (typeof formatted === 'object' && formatted.type === 'consumption_real') {
+                              return (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                  <span className="text-foreground whitespace-nowrap">
+                                    {formatted.value}
+                                  </span>
+                                  <span style={formatted.badgeStyle}>
+                                    {formatted.percent}%
+                                  </span>
+                                </div>
+                              );
+                            }
+                            return (
+                              <div className="content-stretch flex flex-col items-start justify-center overflow-clip">
+                                <span className="text-foreground overflow-ellipsis overflow-hidden whitespace-nowrap w-full">
+                                  {formatted}
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </td>
                     ))}
