@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Upload, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import svgPaths from "../imports/svg-9qh9cqqme2";
@@ -29,6 +29,8 @@ interface SortConfig {
 interface CsvDataTableProps {
   onFileUpload?: (data: Array<Record<string, any>>) => void;
   fileInputRef?: React.RefObject<HTMLInputElement>;
+  data?: Array<Record<string, any>> | null;
+  initialFilter?: Record<string, any>;
 }
 
 // CSV Parser function
@@ -53,8 +55,9 @@ function parseCSV(csvText: string): Array<Record<string, any>> {
   return data;
 }
 
-export function CsvDataTable({ onFileUpload, fileInputRef }: CsvDataTableProps) {
-  const [data, setData] = useState<Array<Record<string, any>> | null>(null);
+export function CsvDataTable({ onFileUpload, fileInputRef, data: externalData, initialFilter }: CsvDataTableProps) {
+  const [internalData, setInternalData] = useState<Array<Record<string, any>> | null>(null);
+  const data = externalData !== undefined ? externalData : internalData;
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: '', direction: null });
   const [currentPage, setCurrentPage] = useState(1);
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
@@ -77,7 +80,7 @@ export function CsvDataTable({ onFileUpload, fileInputRef }: CsvDataTableProps) 
     if (file) {
       const text = await file.text();
       const parsedData = parseCSV(text);
-      setData(parsedData);
+      setInternalData(parsedData);
       setCurrentPage(1);
       if (onFileUpload) {
         onFileUpload(parsedData);
@@ -212,15 +215,72 @@ export function CsvDataTable({ onFileUpload, fileInputRef }: CsvDataTableProps) 
     })
     : data;
 
-  // Filter data based on search query
-  const filteredData = sortedData && searchQuery
-    ? sortedData.filter((row) => {
+  // Filter data based on search query and initial filter
+  const filteredData = useMemo(() => {
+    let result = sortedData;
+
+    // Apply search query filter
+    if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      return Object.values(row).some((value) =>
-        String(value).toLowerCase().includes(query)
-      );
-    })
-    : sortedData;
+      result = result?.filter((row) => {
+        return Object.values(row).some((value) =>
+          String(value).toLowerCase().includes(query)
+        );
+      });
+    }
+
+    // Apply initial filter (e.g., from dashboard drill-down)
+    if (initialFilter?.licensePlate && result) {
+      result = result.filter((row) => row.license_plate === initialFilter.licensePlate);
+    }
+
+    return result;
+  }, [sortedData, searchQuery, initialFilter]);
+
+  // Calculate KPIs from filtered data
+  const kpis = useMemo(() => {
+    if (!filteredData || filteredData.length === 0) {
+      return {
+        totalVolume: 0,
+        totalTransactions: 0,
+        totalCost: 0,
+        averageDeviation: 0,
+      };
+    }
+
+    let totalVolume = 0;
+    let totalCost = 0;
+    let totalDeviation = 0;
+    let validDeviations = 0;
+
+    filteredData.forEach((row) => {
+      // Calculate total volume
+      const volume = parseFloat(row.volume_liters) || 0;
+      totalVolume += volume;
+
+      // Calculate total cost
+      const cost = parseFloat(row.prix_plein_euros) || 0;
+      totalCost += cost;
+
+      // Calculate deviation for average
+      const real = parseFloat(row.consumption_real) || 0;
+      const average = parseFloat(row.consumption_average) || 0;
+      if (!isNaN(real) && !isNaN(average) && average !== 0) {
+        const percentDiff = ((real - average) / average) * 100;
+        totalDeviation += percentDiff;
+        validDeviations++;
+      }
+    });
+
+    const averageDeviation = validDeviations > 0 ? totalDeviation / validDeviations : 0;
+
+    return {
+      totalVolume,
+      totalTransactions: filteredData.length,
+      totalCost,
+      averageDeviation,
+    };
+  }, [filteredData]);
 
   // Pagination
   const totalPages = filteredData ? Math.ceil(filteredData.length / ITEMS_PER_PAGE) : 0;
@@ -307,6 +367,96 @@ export function CsvDataTable({ onFileUpload, fileInputRef }: CsvDataTableProps) 
         className="hidden"
       />
 
+      {/* KPIs Section */}
+      <div className="flex flex-row gap-[20px] w-full shrink-0">
+        {/* Total Volume KPI */}
+        <div className="bg-neutral-100 border border-neutral-200 rounded-[12px] p-[16px] flex flex-col gap-[8px] flex-1">
+          <div className="text-muted-foreground text-sm">Volume Total</div>
+          <div className="text-foreground text-2xl font-semibold">
+            {new Intl.NumberFormat('fr-FR', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }).format(kpis.totalVolume)} L
+          </div>
+        </div>
+
+        {/* Total Transactions KPI */}
+        <div className="bg-neutral-100 border border-neutral-200 rounded-[12px] p-[16px] flex flex-col gap-[8px] flex-1">
+          <div className="text-muted-foreground text-sm">Transactions</div>
+          <div className="text-foreground text-2xl font-semibold">
+            {new Intl.NumberFormat('fr-FR').format(kpis.totalTransactions)}
+          </div>
+        </div>
+
+        {/* Total Cost KPI */}
+        <div className="bg-neutral-100 border border-neutral-200 rounded-[12px] p-[16px] flex flex-col gap-[8px] flex-1">
+          <div className="text-muted-foreground text-sm">Coût Total</div>
+          <div className="text-foreground text-2xl font-semibold">
+            {new Intl.NumberFormat('fr-FR', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+              style: 'currency',
+              currency: 'EUR',
+            }).format(kpis.totalCost)}
+          </div>
+        </div>
+
+        {/* Average Deviation KPI */}
+        <div className="bg-neutral-100 border border-neutral-200 rounded-[12px] p-[16px] flex flex-col gap-[8px] flex-1">
+          <div className="text-muted-foreground text-sm">Écart Moyen</div>
+          <div className="flex items-center gap-[8px]">
+            <span
+              className="text-2xl font-semibold"
+              style={{
+                color: kpis.averageDeviation <= 0
+                  ? '#14532D' // Dark green
+                  : kpis.averageDeviation > 0 && kpis.averageDeviation < 10
+                    ? '#713F12' // Dark yellow
+                    : '#7F1D1D', // Dark red
+              }}
+            >
+              {new Intl.NumberFormat('fr-FR', {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+                signDisplay: 'always',
+              }).format(kpis.averageDeviation)}%
+            </span>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '9999px',
+                paddingLeft: '10px',
+                paddingRight: '10px',
+                paddingTop: '4px',
+                paddingBottom: '4px',
+                fontSize: '14px',
+                fontWeight: 400,
+                fontFamily: 'inherit',
+                whiteSpace: 'nowrap',
+                backgroundColor: kpis.averageDeviation <= 0
+                  ? '#DCFCE7' // Light green
+                  : kpis.averageDeviation > 0 && kpis.averageDeviation < 10
+                    ? '#FEF9C3' // Light yellow
+                    : '#FEE2E2', // Light red
+                color: kpis.averageDeviation <= 0
+                  ? '#14532D' // Dark green
+                  : kpis.averageDeviation > 0 && kpis.averageDeviation < 10
+                    ? '#713F12' // Dark yellow
+                    : '#7F1D1D', // Dark red
+              }}
+            >
+              {kpis.averageDeviation <= 0
+                ? 'Bon'
+                : kpis.averageDeviation > 0 && kpis.averageDeviation < 10
+                  ? 'Attention'
+                  : 'Critique'}
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Table info */}
       <div className="flex items-center justify-between w-full shrink-0">
         <div className="content-stretch flex gap-[10px] items-center">
@@ -386,7 +536,7 @@ export function CsvDataTable({ onFileUpload, fileInputRef }: CsvDataTableProps) 
       </div>
 
       {/* Table wrapper - matches Figma design */}
-      <div className="bg-white flex flex-col items-center overflow-hidden rounded-[12px] flex-1 min-h-0 w-full border border-neutral-100 min-w-0">
+      <div className="bg-white flex flex-col items-center overflow-hidden rounded-[12px] flex-1 min-h-0 w-full border border-neutral-200 min-w-0">
         {/* Single horizontal scroll container for both header and body */}
         <div className={`${paginatedData && paginatedData.length > 0 ? 'overflow-x-auto' : 'overflow-hidden'} w-full custom-scrollbar flex flex-col flex-1 min-h-0`}>
           {/* Header - fixed, no vertical scroll */}
